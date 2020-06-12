@@ -1,23 +1,62 @@
-# NodeJS学习-2020
+## 路径模块 - path
 
-## 什么是nodeJS  
-1. Node.js基于Chrome V8引擎的javaScript运行环境  
-2. Node.js使用一个事件驱动、非阻塞式I/O的模型，使其轻量又高效  
-3. Node.js的包管理器npm，是全球最大的开源库生态系统  
-4. Node.js是用c++写的  
-5. V8引擎是Node.js的核心  
-6. Node.js是运行在服务端的javascript  
+1. path.parse(路径,通常是__filename) - 返回路径对象  
+2. path.dirname(__filename) - 返回目录名，绝对路径  
+3. path.basename(__filename) - 返回path最后一部分  
+4. path.extname(__filename) - 返回文件扩展名  
+5. path.join(__filename) - 串联路径  
 
-## 什么是V8引擎
-1. 电脑无法识别js  
-2. js引擎是让电脑识别代码  
-3. V8由c++写的  
+## 文件模块 - fs
+所有方法都有同步，后加Sync
 
-## 为什么使用Node.js  
-1. 非阻塞式I/O模型 - 单线程不会被阻断，通过回调函数完成结束操作，无需等待请求响应。  
-2. 事件驱动: 接受请求->请求入栈->循环判断是否有请求->执行请求。不会阻断原来的事件，也不会丢失请求。  
+1. mkdir(path) - 创建文件夹  
+2. writeFile(路径，内容，回调) - 创建/写入文件
+3. appendFile(路径，内容，回调) - 追加文件内容  
+4. readFile() - 读取文件  
+5. rename(oldPath,newPath) - 重命名
 
-## 语法与实战
-### 1.入门语法 - reference
-包括路径path,文件fs,操作系统os,url,事件，http模块  
 
+## 操作系统 - os
+
+1. os.platform() - 返回标示操作系统字符串
+2. os.arch() - 返回cup架构
+3. os.cpu() - 返回内核信息
+4. os.freemen() - 返回系统空闲内存（以字节为单位)
+5. os.totalmen() - 返回系统总内存
+6. os.homedir() - 返回用户的主目录路径
+7. os.uptime() - 系统正常运行时间（单位：秒)
+
+## url模块
+
+创建一个url路径
+const myUrl = new URL("https://ke.qq.com:8000/webcourse/index.html?cid=2468298&term_id=102572764&taid=9015269500758474&vid=5285890802934207648")
+
+1. myUrl.href - 获取路径
+2. myUrl.host - 获取域名（包含端口)
+3. myUrl.hostname - 获取域名（不含端口)
+4. myUrl.pathname - 获取域名后的path
+5. myUrl.search - 获取路径?后的内容
+6. myUrl.searchparams - 获取对象参数列表
+7. myUrl.searchparams.append("name",value) - 添加参数
+8. myUrl.searchparams.forEach((value,name)=>{}) - 遍历参数
+
+## 时间模块 - events
+
+```js
+// 创建myEmitter类
+class MyEmitter extends Events{}
+// 实例化对象
+const myEmitter = new MyEmitter()
+// 注册时间
+myEmitter.on("event",(e) => {
+	// 若不用setImnmediate则为同步
+	setImmediate(() => { //转化成异步
+		console.log(e)
+	})
+})
+// 触发事件
+myEmitter.emit("event","这是参数")
+console.log("异步显示")
+```
+
+## http服务器模块
