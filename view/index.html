@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>WebSocket聊天室</title>
+	<link rel="stylesheet" type="text/css" href="style.css"/>
+	<script src="https://cdn.bootcdn.net/ajax/libs/socket.io/2.3.0/socket.io.dev.js"></script>
+</head>
+<body>
+	<div id="online-chat">
+		<h2>聊天室</h2>
+		<div id="chat-window">
+			<div id="output"></div>
+			<div id="feedback"></div>
+		</div>
+		<input type="text" id="handle" placeholder="handle">
+		<input type="text" id="message" placeholder="message">
+		<button id="send">Send</button>
+	</div>
+	<script src="script.js" type="text/javascript" charset="utf-8"></script>
+</body>
+</html>
