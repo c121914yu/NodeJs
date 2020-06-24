@@ -26,3 +26,6 @@ express框架介绍
 
 ### 3. socket.io库 - socket  
 实时通信库
+
+### 4. multer库上传图片 - multer
+上传文件插件
