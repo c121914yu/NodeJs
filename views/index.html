@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>图片上传</title>
+	<link href="https://cdn.bootcdn.net/ajax/libs/materialize/1.0.0/css/materialize.css" rel="stylesheet">
+</head>
+<body>
+	<div class="container">
+		<h1>上传图片文件</h1>
+		<%= typeof msg != 'undefined' ? msg : '' %>
+		<form action="/upload" method="POST" enctype="multipart/form-data">
+			<div class="file-field input-field">
+				<div class="btn grey">
+					<span>选择图片</span>
+					<input type="file" name="myImage">
+				</div>
+				<div class="file-path-wrapper">
+					<input class="file-path validate" type="text">
+				</div>
+				<button type="submit" class="btn">确认提交</button>
+			</div>
+		</form>
+		<br>
+		
+		<img 
+			src="<%= typeof file != 'undefined' ? file : '' %>"
+			class="responsive-img"
+		>
+	</div>
+	<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.js"></script>
+	<script src="https://cdn.bootcdn.net/ajax/libs/materialize/1.0.0/js/materialize.js"></script>
+</body>
+</html>
