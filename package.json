@@ -1,7 +1,18 @@
 {
-  "dependencies": {
-    "cheerio": "^1.0.0-rc.3",
-    "express": "^4.17.1",
-    "request": "^2.88.2"
-  }
+  "preferGlobal": true,
+  "name": "customer-cli",
+  "description": "自定义终端命令",
+  "version": "1.0.0",
+  "main": "mongo.js",
+  "bin": "./command.js",
+  "devDependencies": {
+    "commander": "^5.1.0",
+    "inquirer": "^7.2.0",
+    "mongoose": "^5.9.20"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
 }
