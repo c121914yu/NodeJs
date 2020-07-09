@@ -41,3 +41,9 @@ express 框架介绍
 ### 5. cheerio 库操作 DOM - cheerio
 
 服务器操作 DOM，可用于爬虫。
+
+### 6. passport 身份验证 - passport
+
+passport 身份验证
+
+### 7. typescript 基础 - typescript
