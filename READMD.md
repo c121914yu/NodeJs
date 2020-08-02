@@ -76,3 +76,101 @@ app.use(logger)
 const morgan = require("morgan")
 app.use(morgan("dev"))
 ```
+
+### 3.1 自定义错误中间件
+
+```js
+// 创建自定义错误类，在其他文件引用使用
+class ErrorResponse extends Error {
+	constructor(message, statusCode) {
+		super(message)
+		this.statusCode = statusCode
+	}
+}
+```
+
+### 3.2 异步中间件封装
+
+```js
+// async.js
+// 将接口函数传入，正常运行时执行函数，错误时走next
+const asyncHandler = (fun) => (req, res, next) => {
+	Promise.resolve(fun(req, res, next)).catch(next)
+}
+module.exports = asyncHandler
+
+// controllers.js
+// 去掉之前的try catch,用时asyncHandler替代
+exports.deletecamp = asyncHandler(async (req, res, next) => {
+	const campData = await Camps.findByIdAndDelete(req.params.id)
+	// 空数据返回报错
+	if (!campData)
+		return next(new ErrorResponse(`找不到ID: ${req.params.id}`, 510))
+
+	res.status(200).json({
+		success: true,
+		data: {},
+	})
+})
+```
+
+## 4. 复杂 mongo 查询
+
+请求地址:
+
+> \***_?select=name,averageCost&page=2&limit=3 - 从第 2 页开始筛选 3 条数据，并只要 name 跟 averageCost 字段
+> _**?select=name,averageCost&averageCost[$gte]=50&limit=5 - 筛选前 5 条 averageCost>=50 的数据，并只要 name 跟 averageCost 字段
+> \*\*\*?careers[$in]=人工智能&averageCost[$gte]=50&limit=5 - 筛选 5 条 careers 包含“人工智能”，且 averageCost>=50 的数据
+
+### 4.1 条件查询
+
+```js
+/*
+	mongo条件查询,但是要求在符号前加入$,例如: averageCost:{$gt:50}
+	通过req.query获取，请求地址后加入参数: averageCost[$gte]=50
+ * $gt: greater than 大于
+ * $gte 大于等于
+ * $lt 小于
+ * $lte 小于等于
+ * $in 在数组中,key需要是数组类型
+ */
+```
+
+### 4.2 筛选 key 值 - select
+
+```js
+// 注意需要先获取数据在进行筛选，即需要先find,但此时find不能包含Select关键字，顾需要去除
+if (req.query.select) {
+	let select = req.query.select.split(",").join(" ") //"name _id ...."形式，默认是逗号隔开
+	query.select(select)
+}
+```
+
+### 4.3 排序 - sort
+
+```js
+if (req.query.sort) {
+	let sortBy = req.query.sort.split(",").join(" ")
+	query = query.sort(sortBy) // 例如averageCost，则是价格由小到大，-averageCost价格由大到小
+} else {
+	//默认按时间排序
+	query.sort("-createdAt") //由大到小，即时间越新越在前
+}
+```
+
+### 4.4 分页 - page&limit
+
+```js
+const page = parseInt(req.query.page, 10) || 1
+const limit = parseInt(req.query.limit, 10) || 2
+const startIndex = (page - 1) * limit
+query.skip(startIndex).limit(limit) //从startIndex下标开始查询，查询limit条数据
+// 记录上一页与下一页
+const total = await Camps.countDocuments() //获取总数据长度
+const endIndex = page * limit
+let pagination = {
+	limit,
+}
+pagination.prev = startIndex > 0 ? page - 1 : page
+pagination.next = endIndex < total ? page + 1 : page
+```

@@ -16,6 +16,7 @@ const campsSchema = new Schema({
   },
   website: {
     type: String,
+    unique: false,
     match: [
       /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/,
       "请填写合法的网址",
@@ -57,6 +58,10 @@ const campsSchema = new Schema({
     type: Date,
     default: Date.now,
   },
+  averageCost: {
+    type: Number,
+    required: [true, "请填写价格"],
+  }
 })
 
 module.exports = mongoose.model("Camp", campsSchema)
