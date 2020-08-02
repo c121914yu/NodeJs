@@ -118,9 +118,11 @@ exports.deletecamp = asyncHandler(async (req, res, next) => {
 
 请求地址:
 
-> \***_?select=name,averageCost&page=2&limit=3 - 从第 2 页开始筛选 3 条数据，并只要 name 跟 averageCost 字段
-> _**?select=name,averageCost&averageCost[$gte]=50&limit=5 - 筛选前 5 条 averageCost>=50 的数据，并只要 name 跟 averageCost 字段
-> \*\*\*?careers[$in]=人工智能&averageCost[$gte]=50&limit=5 - 筛选 5 条 careers 包含“人工智能”，且 averageCost>=50 的数据
+> \*\*\*?select=name,averageCost&page=2&limit=3 - 从第 2 页开始筛选 3 条数据，并只要 name 跟 averageCost 字段。
+
+> \*\*\*?select=name,averageCost&averageCost[$gte]=50&limit=5 - 筛选前 5 条 averageCost>=50 的数据，并只要 name 跟 averageCost 字段。
+
+> \*\*\*?careers[$in]=人工智能&averageCost[$gte]=50&limit=5 - 筛选 5 条 careers 包含“人工智能”，且 averageCost>=50 的数据。
 
 ### 4.1 条件查询
 
