@@ -17,10 +17,12 @@ const connectDB = require("./config/db")
 connectDB()
 
 // 引入路由
-const routes = require("./routes/camps.js")
+const camps = require("./routes/camps.js")
+const courses = require("./routes/courses.js")
 // 挂载路由
 //请求地址带/api/v1/camps时执行router里的路由监听,router里不需要再写/api/v1/camps
-app.use("/api/v1/camps", routes)
+app.use("/api/v1/camps", camps)
+app.use("/api/v1/course", courses)
 
 // 自定义中间件
 // const logger = require("./middleware/logger")

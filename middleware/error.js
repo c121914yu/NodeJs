@@ -1,7 +1,7 @@
 const ErrorResponse = require("../utils/errorResponse")
 
 const errorHandler = (err, req, res, next) => {
-  // console.log(err.name);
+  // console.log(err);
   // id数据源报错
   if (err.name === "CastError") { // catch跳出报错
     const msg = `ID格式错误,id: ${err.value}`

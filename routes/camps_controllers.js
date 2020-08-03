@@ -3,70 +3,34 @@ const Camps = require("../models/model_camps")
 // 引入自定义错误类
 const ErrorResponse = require("../utils/errorResponse")
 const asyncHandler = require("../middleware/async")
+
 /*
- * @desc 获取数据
+  1. select - 选择指定字段
+  2. sort - 按某个字段排序
+  3. page & limit - 获取第N页，M条数据
+  4. campsId - 获取特定camsId内的数据
+  5. gt: greater than 大于
+  6. gte 大于等于
+  7. lt 小于
+  8. lte 小于等于
+  9. in 在数组中,需要是数组类型
+ */
+
+/*
+ * @desc 获取所有数据
  * @route GET /api/v1/camps
- * @access 公开的
+ * @access public
  */
 exports.getcamps = asyncHandler(async (req, res, next) => {
-  /*
-   * gt: greater than 大于
-   * gte 大于等于
-   * lt 小于
-   * lte 小于等于
-   * in 在数组中,需要是数组类型
-   */
   //console.log(req.query) //获取?后参数
-
-  // 清除关键字及值
-  let reqQuery = {
-    ...req.query
-  }
-  const removeFileds = ["select", "sort", "page", "limit"]
-  removeFileds.forEach(param => delete reqQuery[param])
-
-  // let queryStr = JSON.stringify(reqQuery)
-  // queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, (match) => `$${match}`)
-
-  // 查询所有数据
-  let query = Camps.find(reqQuery)
-
-  // 在获取到的所有数据上加条件
-  //筛选key值
-  if (req.query.select) {
-    let select = req.query.select.split(",").join(' ')
-    query.select(select)
-  }
-  //排序
-  if (req.query.sort) {
-    let sortBy = req.query.sort.split(",").join(' ')
-    query = query.sort(sortBy) // 例如averageCost，则是价格由小到大，-averageCost价格由大到小
-  } else { //默认按时间排序
-    query.sort("-createdAt") //由大到小，即时间越新越在前
-  }
-
-  // 分页
-  const page = parseInt(req.query.page, 10) || 1
-  const limit = parseInt(req.query.limit, 10) || 2
-  const startIndex = (page - 1) * limit
-  query.skip(startIndex).limit(limit)
-  // 记录上一页与下一页
-  const total = await Camps.countDocuments()
-  const endIndex = page * limit
-  let pagination = {
-    limit
-  }
-  pagination.prev = startIndex > 0 ? page - 1 : page
-  pagination.next = endIndex < total ? page + 1 : page
-
-  const campData = await query
-  res.status(200).json({
-    success: true,
-    count: campData.length,
-    pagination,
-    data: campData,
-  })
+  res.status(200).json(res.advanceResult)
 })
+
+/*
+ * @desc 创建数据
+ * @route POST /api/v1/camps
+ * @access private
+ */
 exports.createcamp = asyncHandler(async (req, res, next) => {
   // 写法1
   // Camps.create(req.body).then(data => {
@@ -88,13 +52,19 @@ exports.createcamp = asyncHandler(async (req, res, next) => {
     data: camp,
   })
 })
+
+/*
+ * @desc 获取单个数据
+ * @route GET /api/v1/camps/:id
+ * @access public
+ */
 exports.getcamp = asyncHandler(async (req, res, next) => {
   // try {
-  const campData = await Camps.findById(req.params.id)
+  const campData = await Camps.findById(req.params.id).populate("courses")
 
   // 空数据返回报错
   if (!campData)
-    return next(new ErrorResponse(`找不到ID: ${req.params.id}`, 510))
+    return next(new ErrorResponse(`找不该ID机构数据: ${req.params.id}`, 510))
 
   res.status(200).json({
     success: true,
@@ -109,6 +79,12 @@ exports.getcamp = asyncHandler(async (req, res, next) => {
   //   next(error)
   // }
 })
+
+/*
+ * @desc 更新单个数据
+ * @route PUT /api/v1/camps/:id
+ * @access private
+ */
 exports.updatecamp = asyncHandler(async (req, res, next) => {
   const campData = await Camps.findByIdAndUpdate(req.params.id, req.body, {
     new: true, //返回新的结果
@@ -116,21 +92,32 @@ exports.updatecamp = asyncHandler(async (req, res, next) => {
   })
 
   if (!campData)
-    return next(new ErrorResponse(`找不到ID: ${req.params.id}`, 510))
+    return next(new ErrorResponse(`找不该ID机构数据: ${req.params.id}`, 510))
 
   res.status(200).json({
     success: true,
     data: campData,
   })
 })
+
+/*
+ * @desc 删除数据，同时删除相关联课程
+ * @route DELETE /api/v1/camps/:id
+ * @access private
+ */
 exports.deletecamp = asyncHandler(async (req, res, next) => {
-  const campData = await Camps.findByIdAndDelete(req.params.id)
+  // const campData = await Camps.findByIdAndDelete(req.params.id)
+  const campData = await Camps.findById(req.params.id)
   // 空数据返回报错
   if (!campData)
-    return next(new ErrorResponse(`找不到ID: ${req.params.id}`, 510))
+    return next(new ErrorResponse(`找不该ID机构数据: ${req.params.id}`, 510))
+
+  // 执行前置钩子周期,remove会默认删除当前数据，并执行一些其他方法
+  campData.remove()
 
   res.status(200).json({
     success: true,
+    msg: course.name + " 机构删除成功",
     data: {},
   })
 })

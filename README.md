@@ -53,6 +53,22 @@ const { getcamps, createcamp } = require("./camps_controllers.js")
 	.post(createcamp)
 ```
 
+### 2.1 路由重定向
+
+```js
+// camps.js
+// 路由重定向,引入course路由
+//当请求地址为http://localhost:5000/api/v1/camps/:campsId/courses时跳转到course中路由
+const courses = require("./courses")
+router.use("/:campsId/courses", courses)
+
+// course.js
+// mergeParams合并参数，用于重定向.若不指定无法获取其他路由跳转过来的参数
+const router = express.Router({
+	mergeParams: true,
+})
+```
+
 ## 3. 中间件
 
 ```js
@@ -113,6 +129,16 @@ exports.deletecamp = asyncHandler(async (req, res, next) => {
 	})
 })
 ```
+
+### 3.3 复杂查询中间件
+
+从课程查询和机构查询的接口中可以看出，两者查询的代码几乎是一致的，所以我们考虑将两者的代码结合起来，使结构更加清晰。
+
+1. 创建中间件文件:advcanceResults.js
+2. 将相同代码放进中间件内，修改其中的模型变量，用参数表示。
+3. 通过 res.advanceResult 返回结果。
+4. 在路由中引入并使用中间件。
+5. 在接口中去掉之前的代码，直接使用 res.advanceResult 作为返回结果。
 
 ## 4. 复杂 mongo 查询
 
@@ -175,4 +201,62 @@ let pagination = {
 }
 pagination.prev = startIndex > 0 ? page - 1 : page
 pagination.next = endIndex < total ? page + 1 : page
+```
+
+### 4.5 关联查询 - populate
+
+```js
+// courses_controllers.js
+// 由于courses是后续添加的数据，camps为1级数据，所以course可以自动关联camps
+// 会在mscamp中打印相应camsId的1级数据
+query = Courses.find(reqQuery).populate({
+	path: "mscamp",
+	select: "name description",
+})
+
+// camps_controllers.js
+// 直接使用populate关联无效，需要在模型中进行配置
+let query = Camps.find(reqQuery).populate("courses")
+
+// model_camps.js
+// 1. 在schema后添加
+{
+  toJSON: {
+    virtuals: true
+  },
+  toObject: {
+    virtuals: true
+  }
+}
+
+// 配置virtuals
+campsSchema.virtual("courses", {
+  ref: "Course", // 关联的模型名
+  localField: "_id", // 自身需要关联的标识符
+  foreignField: "mscamp", // 关联模型存储自身的标识符key值
+  justOne: false // 多个数据
+})
+```
+
+### 4.6 连带删除 - 前置钩子周期函数
+
+前面提到，camps 为 1 级数据，course 为 2 级数据，当删除 camps 时，我们希望可以将其相关联的 course 一起删除掉。
+
+```js
+// model_camps.js
+// 配置前置钩子,用于连带删除.remove钩子函数特制删除数据，会将执行该钩子的数据删掉后再执行函数内容
+campsSchema.pre("remove", async function (next) {
+	// this._id - 当前数据的ID值
+	// this.model("Course") 获取到Course模型
+	await this.model("Course").deleteMany({
+		mscamp: this._id,
+	})
+	next()
+})
+
+// camps_controllers.js
+// 去掉之前findByIdAndDelete方法，变成先找到数据，再执行删除函数
+const campData = await Camps.findById(req.params.id)
+// 执行前置钩子周期,remove会默认删除当前数据，并执行一些其他方法
+campData.remove()
 ```

@@ -16,7 +16,6 @@ const campsSchema = new Schema({
   },
   website: {
     type: String,
-    unique: false,
     match: [
       /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/,
       "请填写合法的网址",
@@ -62,6 +61,31 @@ const campsSchema = new Schema({
     type: Number,
     required: [true, "请填写价格"],
   }
+}, {
+  toJSON: {
+    virtuals: true
+  },
+  toObject: {
+    virtuals: true
+  }
+})
+
+// 配置virtuals
+campsSchema.virtual("courses", {
+  ref: "Course",
+  localField: "_id",
+  foreignField: "mscamp",
+  justOne: false
+})
+
+// 配置前置钩子,用于连带删除
+campsSchema.pre("remove", async function (next) {
+  // this._id - 当前数据的ID值
+  // this.model("Course") 获取到Course模型
+  await this.model("Course").deleteMany({
+    mscamp: this._id
+  })
+  next()
 })
 
 module.exports = mongoose.model("Camp", campsSchema)
