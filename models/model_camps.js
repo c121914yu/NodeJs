@@ -53,13 +53,18 @@ const campsSchema = new Schema({
     type: Boolean,
     default: true,
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
   averageCost: {
     type: Number,
     required: [true, "请填写价格"],
+  },
+  user: {
+    type: mongoose.Schema.ObjectId,
+    ref: "User",
+    required: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
   }
 }, {
   toJSON: {

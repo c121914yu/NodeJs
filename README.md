@@ -260,3 +260,170 @@ const campData = await Camps.findById(req.params.id)
 // 执行前置钩子周期,remove会默认删除当前数据，并执行一些其他方法
 campData.remove()
 ```
+
+## 5. 用户模型
+
+### 5.1 密码加密
+
+在创建用户时对用户输入的密码进行加密。
+
+```js
+// model_users.js
+const bcrypt = require("bcryptjs")
+// 添加用户时对密码进行加密
+userSchema.pre("save", async function (next) {
+	const salt = await bcrypt.genSaltSync(10)
+	this.password = await bcrypt.hash(this.password, salt)
+})
+
+// 自定义方法 - 密码匹配
+userSchema.methods.matchPassword = async function (enteredPsw) {
+	return await bcrypt.compareSync(enteredPsw, this.password)
+}
+```
+
+### 5.2 token && cookie'
+
+```js
+// index.js
+// 配置cookie
+const cookieParser = require("cookie-parser")
+app.use(cookieParser())
+
+// model_users.js
+// 自定义方法 - 生成token
+const jwt = require("jsonwebtoken")
+userSchema.methods.getSignedToken = function () {
+	// 1. 内容。 2. 自定义加密形式。 3. 加密方式&过期时间
+	return jwt.sign(
+		{
+			id: this._id,
+			name: this.name,
+		},
+		process.env.JWT_SECRET,
+		{
+			expiresIn: process.env.JWT_EXPIRE,
+		}
+	)
+}
+
+// controllers.js
+// 生成token并存储到cookie
+const sendTokenRes = (user, statusCode, res) => {
+	// 生成token - 调用自定义方法
+	const token = user.getSignedToken()
+
+	const options = {
+		expires: new Date(
+			Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
+		), //30天过期
+		httpOnly: true,
+	}
+
+	res.status(statusCode).cookie("token", token, options).json({
+		success: true,
+		token,
+	})
+}
+```
+
+### 5.3 数据关联
+
+机构数据和课程数据都会包含一个 user 属性，用于记录是哪个 user 创建的数据，此时需要关联。
+
+```js
+// model_camps.js
+// 加入user值
+user: {
+	type: mongoose.Schema.ObjectId,
+	ref: "User",
+	required: true
+}
+
+// camps_controllers.js
+// 创建数据中加入:
+req.body.user = req.user.id //加入用户id
+// 如果用户是admin,那么可以创建多个机构信息，否则只能创建1个
+const publishedCamp = await Camps.findOne({
+	user: req.user.id
+})
+if (publishedCamp && req.user.role !== "admin")
+	return next(new ErrorResponse("该角色只能创建一个机构", 511))
+```
+
+## 6. 用户鉴权
+
+### 6.1 登录保护
+
+将用户分为登录和未登录，部分接口只能在登录状态下访问。通过 protect 中间件判断。
+
+```js
+// auth.js
+// 鉴权是否登录
+exports.protect = asyncHandler(async (req, res, next) => {
+	let token
+	// 判断是否携带token
+	if (
+		req.headers.authorization &&
+		req.headers.authorization.startsWith("Bearer")
+	) {
+		token = req.headers.authorization.split(" ")[1]
+	} else if (req.headers.cookie) {
+		token = req.headers.cookie.split("=")[1]
+	}
+	// 校验token是否存在
+	if (!token) return next(new ErrorResponse("无权访问", 530))
+	try {
+		// 解析token
+		const decoded = jwt.verify(token, process.env.JWT_SECRET)
+		// 查询用户
+		let user = await User.findById(decoded.id)
+		if (!user) return next(new ErrorResponse("无权访问", 530))
+		// 将user信息赋值给req，方便调用
+		req.user = user
+		next()
+	} catch (error) {
+		return next(new ErrorResponse("无权访问", 530))
+	}
+})
+
+// 在需要保护的路由中引入protect,如:
+// 会先执行protect里的内容，如果错误会直接next(error)，正确则next继续执行createcamp里的方法
+router.route("/").post(protect, createcamp)
+```
+
+### 6.2 身份验证
+
+部分接口仅能由部分身份的用户访问，所以除了检验是否登录外，还需要检验身份情况。同样通过中间件进行判断，放在 protect 后执行。
+
+```js
+// auth.js
+// 通过用户角色，控制访问路由权限
+exports.authoriza = (...roles) => {
+	// roles: Array,将所有传进来的身份组合成一个数组，再判断该用户身份是否在数组中。
+	return (req, res, next) => {
+		// 用户的权限不包含在roles中，则无法访问路由
+		if (!roles.includes(req.user.role))
+			return next(new ErrorResponse("无权访问该路由", 524))
+		next()
+	}
+}
+// 调用时与portect类似
+// 验证登录后会获取到用户的信息，再执行authoriza,此时会验证用户是否为admin或user,不满足条件时会直接返回提示。
+router.route("/").post(protect, authoriza("admin", "user"), createcamp) //针对相同请求地址不同请求方式进行封装
+```
+
+### 6.3 越级保护
+
+admin 可以修改 user 创建的信息，但是 user 不能修改 admin 创建的信息。
+
+```js
+// 在请求接口函数中加入一段身份验证信息。
+/*
+	1. 查询对应数据。
+	2. 判断数据的user是不是当前登录的user，或者是管理员。
+*/
+// 身份验证 - 如果是user则只能删除自己创建的课程
+if (req.user.role !== "admin" && course.user.toString() !== req.user.id)
+	return next(new ErrorResponse(`该用户无权限删除此课程`, 510))
+```

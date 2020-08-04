@@ -6,6 +6,10 @@ const app = express()
 // 配置body解析
 app.use(express.json())
 
+// 配置cookie
+const cookieParser = require("cookie-parser")
+app.use(cookieParser())
+
 const dotenv = require("dotenv")
 dotenv.config({
 	path: "./config/config.env",
@@ -19,10 +23,12 @@ connectDB()
 // 引入路由
 const camps = require("./routes/camps.js")
 const courses = require("./routes/courses.js")
+const auth = require("./routes/auth.js")
 // 挂载路由
 //请求地址带/api/v1/camps时执行router里的路由监听,router里不需要再写/api/v1/camps
 app.use("/api/v1/camps", camps)
 app.use("/api/v1/course", courses)
+app.use("/api/v1/auth", auth)
 
 // 自定义中间件
 // const logger = require("./middleware/logger")

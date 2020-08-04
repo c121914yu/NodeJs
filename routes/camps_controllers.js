@@ -22,8 +22,8 @@ const asyncHandler = require("../middleware/async")
  * @access public
  */
 exports.getcamps = asyncHandler(async (req, res, next) => {
-  //console.log(req.query) //获取?后参数
-  res.status(200).json(res.advanceResult)
+	//console.log(req.query) //获取?后参数
+	res.status(200).json(res.advanceResult)
 })
 
 /*
@@ -32,25 +32,34 @@ exports.getcamps = asyncHandler(async (req, res, next) => {
  * @access private
  */
 exports.createcamp = asyncHandler(async (req, res, next) => {
-  // 写法1
-  // Camps.create(req.body).then(data => {
-  //   res.status(200).json({
-  //     success: true,
-  //     data: data,
-  //   })
-  // }).catch(err => {
-  //   res.status(400).json({
-  //     success: false,
-  //     err
-  //   })
-  // })
+	// 写法1
+	// Camps.create(req.body).then(data => {
+	//   res.status(200).json({
+	//     success: true,
+	//     data: data,
+	//   })
+	// }).catch(err => {
+	//   res.status(400).json({
+	//     success: false,
+	//     err
+	//   })
+	// })
 
-  // 写法2
-  const camp = await Camps.create(req.body)
-  res.status(200).json({
-    success: true,
-    data: camp,
-  })
+	// 写法2
+	req.body.user = req.user.id
+
+	// 如果用户是admin,那么可以创建多个机构信息，否则只能创建1个
+	const publishedCamp = await Camps.findOne({
+		user: req.user.id,
+	})
+	if (publishedCamp && req.user.role !== "admin")
+		return next(new ErrorResponse("该角色只能创建一个机构", 511))
+
+	const camp = await Camps.create(req.body)
+	res.status(200).json({
+		success: true,
+		data: camp,
+	})
 })
 
 /*
@@ -59,25 +68,25 @@ exports.createcamp = asyncHandler(async (req, res, next) => {
  * @access public
  */
 exports.getcamp = asyncHandler(async (req, res, next) => {
-  // try {
-  const campData = await Camps.findById(req.params.id).populate("courses")
+	// try {
+	const campData = await Camps.findById(req.params.id).populate("courses")
 
-  // 空数据返回报错
-  if (!campData)
-    return next(new ErrorResponse(`找不该ID机构数据: ${req.params.id}`, 510))
+	// 空数据返回报错
+	if (!campData)
+		return next(new ErrorResponse(`找不该ID机构数据: ${req.params.id}`, 510))
 
-  res.status(200).json({
-    success: true,
-    data: campData,
-  })
-  // } catch (error) {
-  //   // res.status(400).json({
-  //   //   success: false,
-  //   //   error
-  //   // })
-  //   // next(new ErrorResponse(`Resoure not fount width id of ${req.params.id}`, 510))
-  //   next(error)
-  // }
+	res.status(200).json({
+		success: true,
+		data: campData,
+	})
+	// } catch (error) {
+	//   // res.status(400).json({
+	//   //   success: false,
+	//   //   error
+	//   // })
+	//   // next(new ErrorResponse(`Resoure not fount width id of ${req.params.id}`, 510))
+	//   next(error)
+	// }
 })
 
 /*
@@ -86,18 +95,24 @@ exports.getcamp = asyncHandler(async (req, res, next) => {
  * @access private
  */
 exports.updatecamp = asyncHandler(async (req, res, next) => {
-  const campData = await Camps.findByIdAndUpdate(req.params.id, req.body, {
-    new: true, //返回新的结果
-    runValidators: true // 运行更新验证
-  })
+	const camp = await Camps.findById(req.params.id)
 
-  if (!campData)
-    return next(new ErrorResponse(`找不该ID机构数据: ${req.params.id}`, 510))
+	if (!camp)
+		return next(new ErrorResponse(`找不该ID机构数据: ${req.params.id}`, 510))
 
-  res.status(200).json({
-    success: true,
-    data: campData,
-  })
+	// 身份验证 - 如果是user则只能修改自己创建的数据
+	if (req.user.role !== "admin" && camp.user.toString() !== req.user.id)
+		return next(new ErrorResponse(`该用户无权限更新此数据`, 510))
+
+	const campData = await Camps.findByIdAndUpdate(req.params.id, req.body, {
+		new: true, //返回新的结果
+		runValidators: true, // 运行更新验证
+	})
+
+	res.status(200).json({
+		success: true,
+		data: campData,
+	})
 })
 
 /*
@@ -106,18 +121,22 @@ exports.updatecamp = asyncHandler(async (req, res, next) => {
  * @access private
  */
 exports.deletecamp = asyncHandler(async (req, res, next) => {
-  // const campData = await Camps.findByIdAndDelete(req.params.id)
-  const campData = await Camps.findById(req.params.id)
-  // 空数据返回报错
-  if (!campData)
-    return next(new ErrorResponse(`找不该ID机构数据: ${req.params.id}`, 510))
+	// const campData = await Camps.findByIdAndDelete(req.params.id)
+	const campData = await Camps.findById(req.params.id)
+	// 空数据返回报错
+	if (!campData)
+		return next(new ErrorResponse(`找不该ID机构数据: ${req.params.id}`, 510))
 
-  // 执行前置钩子周期,remove会默认删除当前数据，并执行一些其他方法
-  campData.remove()
+	// 身份验证 - 如果是user则只能删除自己创建的数据
+	if (req.user.role !== "admin" && campData.user.toString() !== req.user.id)
+		return next(new ErrorResponse(`该用户无权限删除此数据`, 510))
 
-  res.status(200).json({
-    success: true,
-    msg: course.name + " 机构删除成功",
-    data: {},
-  })
+	// 执行前置钩子周期,remove会默认删除当前数据，并执行一些其他方法
+	campData.remove()
+
+	res.status(200).json({
+		success: true,
+		msg: campData.name + " 机构删除成功",
+		data: {},
+	})
 })

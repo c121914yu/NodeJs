@@ -12,6 +12,12 @@ const {
   deleteCourse
 } = require("./courses_controllers.js")
 
+// 路由鉴权
+const {
+  protect,
+  authoriza
+} = require("../middleware/auth")
+
 // 封装查询
 const advanceResults = require("../middleware/advanceResults")
 const Course = require("../models/model_course")
@@ -22,9 +28,12 @@ router.route("/")
     path: "mscamp",
     select: "name description",
   }), getCourses)
-  .post(createCourse)
+  .post(protect, authoriza("admin", "user"), createCourse)
 
 // http://localhost:5000/api/v1/course/:id
-router.route("/:id").get(getCourse).put(updateCourse).delete(deleteCourse)
+router.route("/:id")
+  .get(getCourse)
+  .put(protect, authoriza("admin", "user"), updateCourse)
+  .delete(protect, authoriza("admin", "user"), deleteCourse)
 
 module.exports = router

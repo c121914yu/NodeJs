@@ -9,6 +9,7 @@ dotenv.config({
 
 const Camp = require("./models/model_camps")
 const Course = require("./models/model_course")
+const User = require("./models/model_users")
 
 mongoose.connect(process.env.NET_MONGO_URL, {
   useNewUrlParser: true,
@@ -20,13 +21,14 @@ mongoose.connect(process.env.NET_MONGO_URL, {
 // 读取本地数据
 const campsData = JSON.parse(fs.readFileSync(`${__dirname}/_data/mscamps.json`, "utf-8"))
 const courseData = JSON.parse(fs.readFileSync(`${__dirname}/_data/courses.json`, "utf-8"))
-
+const userData = JSON.parse(fs.readFileSync(`${__dirname}/_data/users.json`, "utf-8"))
 
 // 导入数据
 const importData = async () => {
   try {
     await Camp.create(campsData)
     await Course.create(courseData)
+    await User.create(userData)
     console.log("数据存储成功".green);
     process.exit()
   } catch (error) {
@@ -39,7 +41,7 @@ const deleteData = async () => {
   try {
     await Camp.deleteMany()
     await Course.deleteMany()
-
+    await User.deleteMany()
     console.log("数据删除成功".red);
     process.exit()
   } catch (error) {

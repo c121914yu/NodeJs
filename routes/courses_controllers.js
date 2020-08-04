@@ -36,11 +36,14 @@ exports.createCourse = asyncHandler(async (req, res, next) => {
   if (!mscamp)
     return next(new ErrorResponse(`该ID机构数据不存在: ${req.params.campsId}`, 510))
 
+  // 身份验证 - 如果是user则只能在自己的机构创建课程
+  if (req.user.role !== "admin" && mscamp.user.toString() !== req.user.id)
+    return next(new ErrorResponse(`你无权在该机构添加课程`, 510))
+
   // 查到有mscamp数据，追加课程数据
-  const course = await Courses.create({
-    ...req.body,
-    mscamp: req.params.campsId
-  })
+  req.body.user = req.user.id
+  req.body.mscamp = req.params.campsId
+  const course = await Courses.create(req.body)
 
   res.status(200).json({
     success: true,
@@ -74,13 +77,19 @@ exports.getCourse = asyncHandler(async (req, res, next) => {
  * @access private
  */
 exports.updateCourse = asyncHandler(async (req, res, next) => {
-  const course = await Courses.findByIdAndUpdate(req.params.id, req.body, {
-    new: true, //返回新的结果
-    runValidators: true // 运行更新验证
-  })
+  let course = await Courses.findById(req.params.id)
 
   if (!course)
     return next(new ErrorResponse(`找不该ID课程数据: ${req.params.id}`, 510))
+
+  // 身份验证 - 如果是user则只能修改自己创建的课程
+  if (req.user.role !== "admin" && course.user.toString() !== req.user.id)
+    return next(new ErrorResponse(`该用户无权限更新此课程`, 510))
+
+  course = await Courses.findByIdAndUpdate(req.params.id, req.body, {
+    new: true, //返回新的结果
+    runValidators: true // 运行更新验证
+  })
 
   res.status(200).json({
     success: true,
@@ -98,6 +107,10 @@ exports.deleteCourse = asyncHandler(async (req, res, next) => {
 
   if (!course)
     return next(new ErrorResponse(`找不该ID课程数据: ${req.params.id}`, 510))
+
+  // 身份验证 - 如果是user则只能删除自己创建的课程
+  if (req.user.role !== "admin" && course.user.toString() !== req.user.id)
+    return next(new ErrorResponse(`该用户无权限删除此课程`, 510))
 
   res.status(200).json({
     success: true,
