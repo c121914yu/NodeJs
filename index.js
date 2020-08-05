@@ -24,11 +24,15 @@ connectDB()
 const camps = require("./routes/camps.js")
 const courses = require("./routes/courses.js")
 const auth = require("./routes/auth.js")
+const users = require("./routes/users.js")
+const reviews = require("./routes/reviews.js")
 // 挂载路由
 //请求地址带/api/v1/camps时执行router里的路由监听,router里不需要再写/api/v1/camps
 app.use("/api/v1/camps", camps)
 app.use("/api/v1/course", courses)
 app.use("/api/v1/auth", auth)
+app.use("/api/v1/users", users)
+app.use("/api/v1/reviews", reviews)
 
 // 自定义中间件
 // const logger = require("./middleware/logger")

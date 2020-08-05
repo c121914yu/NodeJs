@@ -11,10 +11,6 @@ const {
   resetPassword
 } = require("./auth_controllers.js")
 
-// 路由重定向
-const users = require("./users")
-router.use("/users", users)
-
 // 路由鉴权
 const {
   protect,

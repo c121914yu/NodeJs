@@ -9,7 +9,7 @@ const {
 
 /*
  * @desc 获取所有用户
- * @route GET /api/v1/auth/users
+ * @route GET /api/v1/users
  * @access private/Admin
  */
 exports.getUsers = asyncHandler(async (req, res, next) => {
@@ -17,8 +17,39 @@ exports.getUsers = asyncHandler(async (req, res, next) => {
 })
 
 /*
+ * @desc 创建用户
+ * @route POST /api/v1/users
+ * @access private/Admin
+ */
+exports.createUser = asyncHandler(async (req, res, next) => {
+  const {
+    name,
+    email,
+    password
+  } = req.body
+  if (!name || !email || !password)
+    return next(new ErrorResponse("请填写name,email与password", 521))
+
+  const user = await User.create({
+    name,
+    email,
+    password
+  })
+
+  // 生成token
+  const token = user.getSignedToken()
+
+  res
+    .status(200)
+    .json({
+      success: true,
+      token
+    })
+})
+
+/*
  * @desc 获取单个用户
- * @route GET /api/v1/auth/users/:id
+ * @route GET /api/v1/users/:id
  * @access private/Admin
  */
 exports.getUser = asyncHandler(async (req, res, next) => {

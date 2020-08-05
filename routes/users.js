@@ -3,6 +3,7 @@ const router = express.Router()
 
 const {
   getUsers,
+  createUser,
   getUser,
   deleteUser,
   updateUser
@@ -21,7 +22,10 @@ const {
 router.use(protect)
 router.use(authoriza("admin"))
 
-router.get("/", advanceResults(Users), getUsers)
+router.route("/")
+  .get(advanceResults(Users), getUsers)
+  .post(createUser)
+
 router.route("/:id")
   .get(getUser)
   .put(updateUser)

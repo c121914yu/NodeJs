@@ -18,6 +18,8 @@ const {
 // 路由重定向
 const courses = require("./courses")
 router.use("/:campsId/courses", courses)
+const reviews = require("./reviews")
+router.use("/:campsId/reviews", reviews)
 
 // 封装查询
 const advanceResults = require("../middleware/advanceResults")
